@@ -15,8 +15,10 @@ mod widget {
 }
 
 type Tracks = [Option<u32>; 4];
-const DEF_TRACKS: Tracks = [Some(15), Some(30), Some(60), Some(144)];
+const DEF_TRACKS: Tracks = [Some(15), Some(30), Some(60), Some(120)];
 const TRACK_NUM: usize = DEF_TRACKS.len();
+
+const DEF_TICK_RATE: f32 = 90.;
 
 type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
@@ -48,7 +50,8 @@ fn get_tracks() -> Tracks {
 struct App {
     should_quit: bool,
     tracks: Tracks,
-    offset: [u16; TRACK_NUM],
+    tracks_offset: [u16; TRACK_NUM],
+    offset: u16,
     frame: usize,
 }
 
@@ -64,16 +67,24 @@ impl App {
 
     pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
         let fps = self.max_fps();
+
         let mut render_interval = interval(Duration::from_secs_f32(1. / fps));
+        let mut tick_interval = interval(Duration::from_secs_f32(1. / DEF_TICK_RATE));
+
         let mut events = EventStream::new();
         let tracks = self.tracks();
 
         while !self.should_quit {
             tokio::select! {
                 Some(Ok(event)) = events.next() =>  self.handle_event(&event),
+                _ = tick_interval.tick() => {
+                    if let Ok(area) = terminal.size() {
+                        self.on_tick(area);
+                    }
+                },
                 _ = render_interval.tick() => {
                     if let Ok(area) = terminal.size() {
-                        self.on_tick(&area);
+                        self.on_render(fps);
                         terminal.try_draw(|frame| self.draw(frame, area, tracks))?;
                     }
                 },
@@ -103,19 +114,22 @@ impl App {
             .min(240) as f32
     }
 
-    #[inline]
-    fn on_tick(&mut self, area: &Size) {
+    fn on_render(&mut self, max_fps: f32) {
         self.frame = if self.frame == usize::MAX { 1 } else { self.frame + 1 };
         self.tracks
             .iter()
             .filter_map(|track| *track)
             .enumerate()
             .for_each(|(i, fps)| {
-                if self.frame % fps as usize == 0 {
-                    let offset = self.offset[i];
-                    self.offset[i] = if offset == area.width - 1 { 0 } else { offset + 1 };
+                if self.frame % (max_fps / fps as f32) as usize == 0 {
+                    self.tracks_offset[i] = self.offset;
                 }
             })
+    }
+
+    #[inline]
+    fn on_tick(&mut self, area: Size) {
+        self.offset = if self.offset >= area.width - Crab::WIDTH { 0 } else { self.offset + 1 };
     }
 
     fn draw(&self, frame: &mut Frame, size: Size, tracks: u16) -> std::io::Result<()> {
@@ -142,7 +156,7 @@ impl App {
             .filter_map(|track| *track)
             .enumerate()
             .for_each(|(i, track)| {
-                frame.render_widget(Track(track, self.offset[i]), layout[i]);
+                frame.render_widget(Track(track, self.tracks_offset[i]), layout[i]);
             });
 
         Ok(())
