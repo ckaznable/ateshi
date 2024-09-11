@@ -1,54 +1,154 @@
-use std::{io::Stdout, time::Duration};
+use std::{env, io::Stdout, time::Duration};
 
 use anyhow::Result;
 use crossterm::event::{Event, EventStream, KeyCode};
 use futures::StreamExt;
-use ratatui::backend::CrosstermBackend;
+use ratatui::{backend::CrosstermBackend, layout::{Constraint, Layout, Size}, Frame};
 
-const CRAB: [[char; 7]; 4] = [
-    ['▟', ' ', '●', ' ', '●', ' ', '▙'],
-    [' ', '▚', '▄', '▄', '▄', '▄', ' '],
-    [' ', '░', '▒', '▓', '▒', '░', ' '],
-    [' ', '▝', ' ', ' ', ' ', '▝', ' '],
-];
+use tokio::time::interval;
+use widget::{crab::Crab, hint::Hint, track::Track};
+
+mod widget {
+    pub mod crab;
+    pub mod hint;
+    pub mod track;
+}
+
+type Tracks = [Option<u32>; 4];
+const DEF_TRACKS: Tracks = [Some(15), Some(30), Some(60), Some(144)];
+const TRACK_NUM: usize = DEF_TRACKS.len();
 
 type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() -> Result<()> {
+    let tracks = get_tracks();
+    let use_def_tracks = tracks.iter().all(|t| t.is_none());
+    let tracks = if use_def_tracks { DEF_TRACKS } else { tracks };
+
     let terminal = ratatui::init();
-    let app = App::default();
-    app.run(terminal).await?;
+    let app = App::with_tracks(tracks);
+    let res = app.run(terminal).await;
     ratatui::restore();
-    Ok(())
+    res
+}
+
+fn get_tracks() -> Tracks {
+    env::args()
+        .skip(1)
+        .enumerate()
+        .filter(|(i, _)| *i < TRACK_NUM)
+        .fold([None, None, None, None], |mut tracks, (i, s)| {
+            tracks[i] = Some(s.parse::<u32>().expect("argument must be a number"));
+            tracks
+        })
 }
 
 #[derive(Debug, Default)]
 struct App {
     should_quit: bool,
+    tracks: Tracks,
+    offset: [u16; TRACK_NUM],
+    frame: usize,
 }
 
 impl App {
-    const FRAMES_PER_SECOND: f32 = 60.0;
+    const REQUIRED_WIDTH: u16 = Crab::WIDTH + 1;
+
+    pub fn with_tracks(tracks: Tracks) -> Self {
+        Self {
+            tracks,
+            ..Default::default()
+        }
+    }
 
     pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
-        let mut interval =
-            tokio::time::interval(Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND));
+        let fps = self.max_fps();
+        let mut render_interval = interval(Duration::from_secs_f32(1. / fps));
         let mut events = EventStream::new();
+        let tracks = self.tracks();
 
         while !self.should_quit {
             tokio::select! {
-                _ = interval.tick() => self.draw(&mut terminal)?,
                 Some(Ok(event)) = events.next() =>  self.handle_event(&event),
+                _ = render_interval.tick() => {
+                    if let Ok(area) = terminal.size() {
+                        self.on_tick(&area);
+                        terminal.try_draw(|frame| self.draw(frame, area, tracks))?;
+                    }
+                },
             }
         }
+
         Ok(())
     }
 
-    fn draw(&self, terminal: &mut Terminal) -> Result<()> {
+    fn tracks(&self) -> u16 {
+        self.tracks.iter().fold(0, |acc, t| {
+            if t.is_some() {
+                acc.saturating_add(1)
+            } else {
+                acc
+            }
+        })
+    }
+
+    fn max_fps(&self) -> f32 {
+        self.tracks
+            .iter()
+            .copied()
+            .map(|t| t.unwrap_or_default())
+            .max()
+            .unwrap_or(60)
+            .min(240) as f32
+    }
+
+    #[inline]
+    fn on_tick(&mut self, area: &Size) {
+        self.frame = if self.frame == usize::MAX { 1 } else { self.frame + 1 };
+        self.tracks
+            .iter()
+            .filter_map(|track| *track)
+            .enumerate()
+            .for_each(|(i, fps)| {
+                if self.frame % fps as usize == 0 {
+                    let offset = self.offset[i];
+                    self.offset[i] = if offset == area.width - 1 { 0 } else { offset + 1 };
+                }
+            })
+    }
+
+    fn draw(&self, frame: &mut Frame, size: Size, tracks: u16) -> std::io::Result<()> {
+        let area = frame.area();
+
+        let track_height = Crab::HEIGHT + 2;
+        let required_height: u16 = track_height * tracks;
+        if size.height < required_height || size.width < Self::REQUIRED_WIDTH {
+            frame.render_widget(Hint(required_height, Self::REQUIRED_WIDTH), area);
+            return Ok(());
+        }
+
+        let constraints = [
+            Constraint::Length(track_height),
+            Constraint::Length(track_height),
+            Constraint::Length(track_height),
+            Constraint::Length(track_height),
+            Constraint::Min(0),
+        ];
+        let layout = Layout::vertical(constraints).split(area);
+
+        self.tracks
+            .iter()
+            .filter_map(|track| *track)
+            .enumerate()
+            .for_each(|(i, track)| {
+                frame.render_widget(Track(track, self.offset[i]), layout[i]);
+            });
+
         Ok(())
     }
 
+    #[allow(clippy::single_match)]
     fn handle_event(&mut self, event: &Event) {
         if let Event::Key(event) = event {
             match event.code {
@@ -58,4 +158,3 @@ impl App {
         }
     }
 }
-
