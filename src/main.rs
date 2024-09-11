@@ -6,7 +6,10 @@ use futures::StreamExt;
 use ratatui::{backend::CrosstermBackend, layout::{Constraint, Layout, Size}, Frame};
 
 use tokio::time::interval;
+use util::lcm_of_multiple;
 use widget::{crab::Crab, hint::Hint, track::Track};
+
+mod util;
 
 mod widget {
     pub mod crab;
@@ -66,7 +69,7 @@ impl App {
     }
 
     pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
-        let fps = self.max_fps();
+        let fps = self.render_fps();
 
         let mut render_interval = interval(Duration::from_secs_f32(1. / fps));
         let mut tick_interval = interval(Duration::from_secs_f32(1. / DEF_TICK_RATE));
@@ -102,6 +105,18 @@ impl App {
                 acc
             }
         })
+    }
+
+    fn render_fps(&self) -> f32 {
+        let l = self.tracks.map(|t| match t {
+            Some(fps) => fps as u64,
+            None => 0,
+        });
+
+        lcm_of_multiple(&l)
+            .map(|s| s as f32)
+            .unwrap_or_else(|| self.max_fps())
+            .min(240.)
     }
 
     fn max_fps(&self) -> f32 {
