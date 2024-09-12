@@ -3,7 +3,11 @@ use std::{env, io::Stdout, time::Duration};
 use anyhow::Result;
 use crossterm::event::{Event, EventStream, KeyCode};
 use futures::StreamExt;
-use ratatui::{backend::CrosstermBackend, layout::{Constraint, Layout, Size}, Frame};
+use ratatui::{
+    backend::CrosstermBackend,
+    layout::{Constraint, Layout, Size},
+    Frame,
+};
 
 use tokio::time::interval;
 use util::lcm_of_multiple;
@@ -108,11 +112,7 @@ impl App {
     }
 
     fn render_fps(&self) -> f32 {
-        let l = self.tracks.map(|t| match t {
-            Some(fps) => fps as u64,
-            None => 0,
-        });
-
+        let l = self.tracks.map(|t| t.unwrap_or_default() as u64);
         lcm_of_multiple(&l)
             .map(|s| s as f32)
             .unwrap_or_else(|| self.max_fps())
@@ -130,7 +130,12 @@ impl App {
     }
 
     fn on_render(&mut self, max_fps: f32) {
-        self.frame = if self.frame == usize::MAX { 1 } else { self.frame + 1 };
+        self.frame = if self.frame == usize::MAX {
+            1
+        } else {
+            self.frame + 1
+        };
+
         self.tracks
             .iter()
             .filter_map(|track| *track)
@@ -144,7 +149,11 @@ impl App {
 
     #[inline]
     fn on_tick(&mut self, area: Size) {
-        self.offset = if self.offset >= area.width - Crab::WIDTH { 0 } else { self.offset + 1 };
+        self.offset = if self.offset >= area.width - Crab::WIDTH {
+            0
+        } else {
+            self.offset + 1
+        };
     }
 
     fn draw(&self, frame: &mut Frame, size: Size, tracks: u16) -> std::io::Result<()> {
