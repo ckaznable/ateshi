@@ -5,7 +5,7 @@ use crossterm::event::{Event, EventStream, KeyCode};
 use futures::StreamExt;
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Layout, Size},
+    layout::{Constraint, Flex, Layout, Size},
     Frame,
 };
 
@@ -166,14 +166,14 @@ impl App {
             return Ok(());
         }
 
-        let constraints = [
+        let layout = Layout::vertical([
             Constraint::Length(track_height),
             Constraint::Length(track_height),
             Constraint::Length(track_height),
             Constraint::Length(track_height),
-            Constraint::Min(0),
-        ];
-        let layout = Layout::vertical(constraints).split(area);
+        ])
+            .flex(Flex::Center)
+            .split(area);
 
         self.tracks
             .iter()

@@ -1,6 +1,10 @@
 use ratatui::{buffer::Buffer, layout::Rect, style::Color, widgets::Widget};
 
-const CRAB: [[char; 7]; 4] = [
+type CrabAscii = [[char; 7]; 4];
+/// fg, bg
+type CrabTheme = [[(Color, Color); 7]; 4];
+
+const CRAB: CrabAscii = [
     ['▟', ' ', '●', ' ', '●', ' ', '▙'],
     [' ', '▚', '▄', '▄', '▄', '▞', ' '],
     [' ', '▐', '▒', '▓', '▒', '▌', ' '],
@@ -8,18 +12,18 @@ const CRAB: [[char; 7]; 4] = [
 ];
 
 use Color::*;
-const CRAB_THEME: [[Color; 7]; 4] = [
-    [Red, Reset, Black, Reset, Black, Reset, Red],
-    [Reset, Red, Red, Red, Red, Red, Reset],
-    [Reset, Red, Red, Red, Red, Red, Reset],
-    [Reset, Red, Reset, Reset, Reset, Red, Reset],
+const CRAB_THEME: CrabTheme = [
+    [(Red, Reset), (Reset, Reset), (Black, Reset), (Reset, Reset), (Black, Reset), (Reset, Reset), (Red, Reset)],
+    [(Reset, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Reset, Reset)],
+    [(Reset, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Red, Reset), (Reset, Reset)],
+    [(Reset, Reset), (Red, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Red, Reset), (Reset, Reset)],
 ];
 
 pub struct Crab;
 
 impl Crab {
-    pub const HEIGHT: u16 = CRAB[0].len() as u16;
-    pub const WIDTH: u16 = CRAB.len() as u16;
+    pub const HEIGHT: u16 = CRAB.len() as u16;
+    pub const WIDTH: u16 = CRAB[0].len() as u16;
 }
 
 impl Widget for Crab {
@@ -38,7 +42,7 @@ impl Widget for Crab {
 
                 let pos = (left + x as u16, top + y as u16);
                 if let Some(cell) = buf.cell_mut(pos) {
-                    cell.set_char(*c).set_fg(CRAB_THEME[y][x]);
+                    cell.set_char(*c).set_fg(CRAB_THEME[y][x].0);
                 }
             })
         });

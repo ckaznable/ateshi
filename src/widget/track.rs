@@ -1,6 +1,6 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Flex, Layout, Rect},
     widgets::{Block, Widget},
 };
 
@@ -17,13 +17,7 @@ impl Widget for Track {
             .title_top(format!("{}", self.0))
             .render(area, buf);
 
-        let [_, area, _] = Layout::vertical([
-            Constraint::Length(1),
-            Constraint::Length(Crab::HEIGHT),
-            Constraint::Length(1),
-        ])
-        .areas(area);
-
+        let [area] = Layout::vertical([Constraint::Length(Crab::HEIGHT)]).flex(Flex::Center).areas(area);
         let [_, area] = Layout::horizontal([Constraint::Length(self.1), Constraint::Min(0)]).areas(area);
         Crab.render(area, buf);
     }
