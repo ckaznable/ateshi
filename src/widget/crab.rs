@@ -16,7 +16,7 @@ const KANI: CraBAscii = [
     [' ', ' ', '4', '4', '.', '5', ' ', ' ', ' '],
     ['▟', ' ', ' ', '▂', '▁', '▂', ' ', ' ', '▙'],
     [' ', '▗', '▄', '▄', '▄', '▄', '▄', '▖', ' '],
-    ['▞', ' ', '█', '▾', '█', '▾', '█', ' ', '▚'],
+    ['▞', ' ', '▛', '▾', '█', '▾', '▜', ' ', '▚'],
     ['/', '-', '█', '▙', '▂', '▟', '█', '-', '\\'],
 ];
 
@@ -37,7 +37,7 @@ const KANI_THEME: CrabTheme = [
     [(Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset), (Reset, Reset)],
     [(Red, Reset), (Red, Reset), (WHITE, Reset), (WHITE, Reset), (WHITE, Reset), (WHITE, Reset), (WHITE, Reset), (Red, Reset), (Red, Reset)],
     [(Reset, Reset), (AQUA, Reset), (AQUA_PINK, WHITE), (AQUA_PINK, WHITE), (AQUA_PINK, WHITE), (AQUA_PINK, WHITE), (AQUA_PINK, WHITE), (AQUA, Reset), (Reset, Reset)],
-    [(AQUA_PINK, Reset), (Reset, Reset), (Red, Reset), (WHITE, Red), (Red, Reset), (WHITE, Red), (Red, Reset), (Reset, Reset), (AQUA_PINK, Reset)],
+    [(AQUA_PINK, Reset), (Reset, Reset), (AQUA_PINK, Red), (WHITE, Red), (Red, Reset), (WHITE, Red), (AQUA_PINK, Red), (Reset, Reset), (AQUA_PINK, Reset)],
     [(Red, Reset), (Red, Reset), (AQUA_BLUE, Reset), (AQUA_BLUE, WHITE), (AQUA_BLUE, WHITE), (AQUA_BLUE, WHITE), (AQUA_BLUE, Reset), (Red, Reset), (Red, Reset)],
 ];
 
