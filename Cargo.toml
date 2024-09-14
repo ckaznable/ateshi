@@ -2,6 +2,15 @@
 name = "ateshi"
 version = "0.1.0"
 edition = "2021"
+authors = ["CK Aznable"]
+description = " ateshi is a Command Line Interface (CLI) tool designed to mimic the functionality of UFO Test. "
+homepage = "https://github.com/ckaznable/ateshi"
+repository = "https://github.com/ckaznable/ateshi"
+keywords = ["tui", "ufo-test"]
+exclude = [".github/"]
+categories = ["command-line-utilities"]
+license = "MIT"
+readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.87"
