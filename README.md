@@ -5,7 +5,6 @@ ateshi is a Command Line Interface (CLI) tool designed to mimic the functionalit
 ## Features
 
 - Run UFO Test-like tests in a command-line interface
-- [Add more specific features here]
 
 ## Installation
 
