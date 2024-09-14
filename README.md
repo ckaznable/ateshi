@@ -36,6 +36,8 @@ This command will run the test displaying frame rates of 30, 60, 120, and 240 fp
 
 Note: If you enter a value greater than 240, it will be capped at 240.
 
+To exit the program at any time, press the 'q' key.
+
 ## Name Origin
 
 The name `ateshi` comes from an interesting internet meme. It's derived from the Japanese phrase `あてぃしガニ` (Ateshi gani), which is a meme associated with a legendary maid VTuber. This name adds a touch of humor and uniqueness to the project.
