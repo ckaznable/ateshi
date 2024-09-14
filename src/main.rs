@@ -31,24 +31,30 @@ type Terminal = ratatui::Terminal<CrosstermBackend<Stdout>>;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 2)]
 async fn main() -> Result<()> {
-    let tracks = get_tracks();
+    let (tracks, aqua) = get_tracks();
     let use_def_tracks = tracks.iter().all(|t| t.is_none());
     let tracks = if use_def_tracks { DEF_TRACKS } else { tracks };
 
     let terminal = ratatui::init();
-    let app = App::with_tracks(tracks);
+    let app = App::with_tracks(tracks).enable_easter_egg(aqua);
     let res = app.run(terminal).await;
     ratatui::restore();
     res
 }
 
-fn get_tracks() -> Tracks {
+fn get_tracks() -> (Tracks, bool) {
     env::args()
         .skip(1)
         .enumerate()
         .filter(|(i, _)| *i < TRACK_NUM)
-        .fold([None, None, None, None], |mut tracks, (i, s)| {
-            tracks[i] = Some(s.parse::<u32>().expect("argument must be a number"));
+        .fold(([None, None, None, None], false), |mut tracks, (i, s)| {
+            tracks.0[i] = if s == "44.5" || s == "445" {
+                tracks.1 = true;
+                Some(45)
+            } else {
+                Some(s.parse::<u32>().expect("argument must be a number"))
+            };
+
             tracks
         })
 }
@@ -60,6 +66,7 @@ struct App {
     tracks_offset: [u16; TRACK_NUM],
     offset: u16,
     frame: usize,
+    aqua: bool,
 }
 
 impl App {
@@ -70,6 +77,11 @@ impl App {
             tracks,
             ..Default::default()
         }
+    }
+
+    pub fn enable_easter_egg(mut self, aqua: bool) -> Self {
+        self.aqua = aqua;
+        self
     }
 
     pub async fn run(mut self, mut terminal: Terminal) -> Result<()> {
@@ -180,7 +192,7 @@ impl App {
             .filter_map(|track| *track)
             .enumerate()
             .for_each(|(i, track)| {
-                frame.render_widget(Track(track, self.tracks_offset[i]), layout[i]);
+                frame.render_widget(Track(track, self.tracks_offset[i], self.aqua), layout[i]);
             });
 
         Ok(())

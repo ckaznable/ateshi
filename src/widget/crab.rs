@@ -41,7 +41,7 @@ const KANI_THEME: CrabTheme = [
     [(Red, Reset), (Red, Reset), (AQUA_BLUE, Reset), (AQUA_BLUE, WHITE), (AQUA_BLUE, WHITE), (AQUA_BLUE, WHITE), (AQUA_BLUE, Reset), (Red, Reset), (Red, Reset)],
 ];
 
-pub struct Crab;
+pub struct Crab(pub bool);
 
 impl Crab {
     pub const HEIGHT: u16 = CRAB.len() as u16;
@@ -56,7 +56,9 @@ impl Widget for Crab {
         let top = area.top();
         let left = area.left();
 
-        CRAB.iter().enumerate().for_each(|(y, chunk)| {
+        let (ascii, theme) = if self.0 { (KANI, KANI_THEME) } else { (CRAB, CRAB_THEME) };
+
+        ascii.iter().enumerate().for_each(|(y, chunk)| {
             chunk.iter().enumerate().for_each(|(x, c)| {
                 if *c == ' ' {
                     return;
@@ -64,7 +66,7 @@ impl Widget for Crab {
 
                 let pos = (left + x as u16, top + y as u16);
                 if let Some(cell) = buf.cell_mut(pos) {
-                    let theme = CRAB_THEME[y][x];
+                    let theme = theme[y][x];
                     cell.set_char(*c).set_fg(theme.0).set_bg(theme.1);
                 }
             })

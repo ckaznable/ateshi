@@ -6,7 +6,8 @@ use ratatui::{
 
 use super::crab::Crab;
 
-pub struct Track(pub u32, pub u16);
+/// fps, offset, eater egg flag
+pub struct Track(pub u32, pub u16, pub bool);
 
 impl Widget for Track {
     fn render(self, area: Rect, buf: &mut Buffer)
@@ -19,6 +20,6 @@ impl Widget for Track {
 
         let [area] = Layout::vertical([Constraint::Length(Crab::HEIGHT)]).flex(Flex::Center).areas(area);
         let [_, area] = Layout::horizontal([Constraint::Length(self.1), Constraint::Min(0)]).areas(area);
-        Crab.render(area, buf);
+        Crab(self.2).render(area, buf);
     }
 }
